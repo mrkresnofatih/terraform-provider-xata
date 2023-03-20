@@ -76,5 +76,49 @@ func WorkspaceResource() *schema.Resource {
 			data.SetId(foundWorkspace.Id)
 			return diags
 		},
+		UpdateContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			var diags diag.Diagnostics
+			client := i.(base.XataApi)
+			id := data.Get("id").(string)
+			name := data.Get("name").(string)
+			slug := data.Get("slug").(string)
+			svc := workspaceservice.WorkspaceService{
+				XataApi: client,
+			}
+			updatedWorkspace, err := svc.Update(workspaceservice.WorkspaceUpdateRequest{
+				Id: id,
+				Request: workspaceservice.WorkspaceUpdateApiRequest{
+					Name: name,
+					Slug: slug,
+				},
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if err = data.Set("name", updatedWorkspace.Name); err != nil {
+				return diag.FromErr(err)
+			}
+			if err = data.Set("slug", updatedWorkspace.Slug); err != nil {
+				return diag.FromErr(err)
+			}
+			data.SetId(updatedWorkspace.Id)
+			return diags
+		},
+		DeleteContext: func(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+			var diags diag.Diagnostics
+			client := i.(base.XataApi)
+			id := data.Get("id").(string)
+			svc := workspaceservice.WorkspaceService{
+				XataApi: client,
+			}
+			_, err := svc.Delete(workspaceservice.WorkspaceDeleteRequest{
+				Id: id,
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			data.SetId("")
+			return diags
+		},
 	}
 }

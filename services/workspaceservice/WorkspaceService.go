@@ -99,11 +99,65 @@ func (w WorkspaceService) Get(request WorkspaceGetRequest) (WorkspaceGetResponse
 }
 
 func (w WorkspaceService) Update(request WorkspaceUpdateRequest) (WorkspaceUpdateResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	utilty.LogInfo("start update-workspace w. data: %s", request)
+	url := fmt.Sprintf("https://api.xata.io/workspaces/%s", request.Id)
+	serial, err := json.Marshal(request.Request)
+	if err != nil {
+		utilty.LogError("failed to json-marshal %s", request)
+		return utilty.ErrorReturner[WorkspaceUpdateResponse]("failed to update workspace")
+	}
+	bodyReader := bytes.NewReader(serial)
+	req, err := http.NewRequest(http.MethodPut, url, bodyReader)
+	if err != nil {
+		utilty.LogError("failed to build http request %s", url)
+		return utilty.ErrorReturner[WorkspaceUpdateResponse]("failed to build http request")
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.XataApi.ApiKey))
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{
+		Timeout: time.Second * 30,
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		utilty.LogError("http request failed %s", url)
+		return utilty.ErrorReturner[WorkspaceUpdateResponse]("http req failed")
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		utilty.LogInfo("read all body failed")
+		return utilty.ErrorReturner[WorkspaceUpdateResponse]("read body failed")
+	}
+	utilty.LogInfo("response-body: %s", string(body))
+	result := WorkspaceUpdateResponse{}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		utilty.LogError("failed to unmarshal body %s", string(body))
+		return utilty.ErrorReturner[WorkspaceUpdateResponse]("failed to unmarshal")
+	}
+	utilty.LogInfo("success get workspace of req: %s", request)
+	return result, nil
 }
 
 func (w WorkspaceService) Delete(request WorkspaceDeleteRequest) (WorkspaceDeleteResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	utilty.LogInfo("start delete-workspace w. data: %s", request)
+	url := fmt.Sprintf("https://api.xata.io/workspaces/%s", request.Id)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		utilty.LogError("failed to build http request %s", url)
+		return utilty.ErrorReturner[WorkspaceDeleteResponse]("failed to build http request")
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.XataApi.ApiKey))
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{
+		Timeout: time.Second * 30,
+	}
+	_, err = client.Do(req)
+	if err != nil {
+		utilty.LogError("failed to execute api request for workspace")
+		return utilty.ErrorReturner[WorkspaceDeleteResponse]("failed to execute api request workspace")
+	}
+	utilty.LogInfo("success delete workspace")
+	return WorkspaceDeleteResponse{
+		Id: request.Id,
+	}, nil
 }
