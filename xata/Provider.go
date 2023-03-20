@@ -25,8 +25,8 @@ func Provider() *schema.Provider {
 		ConfigureContextFunc: func(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 			var diags diag.Diagnostics
 			apiKey := data.Get("api_key").(string)
-			if len(apiKey) > 0 {
-				return nil, diag.FromErr(errors.New("create api key"))
+			if len(apiKey) == 0 {
+				return nil, diag.FromErr(errors.New("api key is empty"))
 			}
 			return base.XataApi{
 				ApiKey: apiKey,
